@@ -1,0 +1,4 @@
+name: signet-smoke
+profile: signet
+provider: k3d
+trust-domain: smoke.cluster.local

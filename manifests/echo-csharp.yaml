@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smoke-csharp
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: echo
+  namespace: smoke-csharp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo
+  namespace: smoke-csharp
+  labels:
+    app: echo
+    language: csharp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo
+  template:
+    metadata:
+      labels:
+        app: echo
+        language: csharp
+    spec:
+      serviceAccountName: echo
+      containers:
+        - name: echo
+          image: ghcr.io/bytepunx/signet-echo-csharp:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SIGNET_ADDR
+              value: "signet.signet.svc.cluster.local:8443"
+            - name: SIGNET_TRUST_DOMAIN
+              value: "smoke.cluster.local"
+            - name: SPIFFE_WORKLOAD_SOCKET
+              value: "unix:///run/spiffe.io/spire-agent.sock"
+            - name: SIGNET_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SIGNET_SERVICE
+              value: "echo"
+            - name: RESTART_LOCK_TTL_SECONDS
+              value: "30"
+            - name: RESTART_DEBOUNCE_SECONDS
+              value: "5"
+          volumeMounts:
+            - name: spiffe
+              mountPath: /run/spiffe.io
+              readOnly: true
+      volumes:
+        - name: spiffe
+          csi:
+            driver: csi.spiffe.io
+            readOnly: true

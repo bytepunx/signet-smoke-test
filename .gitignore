@@ -1,0 +1,7 @@
+# The deploy key's private half must never be committed — only its public
+# half ever leaves this machine (via `gh repo deploy-key add`).
+.secrets/
+
+# Written by scripts/provision.sh; regenerate with scripts/provision.sh rather
+# than committing a stale ID.
+.smoke-repo-id

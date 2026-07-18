@@ -1,0 +1,30 @@
+# kluster's signet profile pre-creates the signet-admin ServiceAccount (and the
+# master-key Secret + auto-unseal wiring) but does NOT grant it the "administer"
+# verb signetd checks for admin RPCs — see deploy/helm/signet/templates/
+# clusterrole.yaml in the signet repo for the documented rationale. Without
+# this, every `signet` CLI admin command (repo add, policy create, sops-key
+# rotate, ...) gets PERMISSION_DENIED against a freshly-provisioned cluster.
+#
+# Applied via plain kubectl apply, not part of the Helm release, so it's
+# unaffected by repeated `kluster up` runs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: signet-admin-operator
+rules:
+  - apiGroups: ["signet.io"]
+    resources: ["adminoperations"]
+    verbs: ["administer"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: signet-admin-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: signet-admin-operator
+subjects:
+  - kind: ServiceAccount
+    name: signet-admin
+    namespace: signet
