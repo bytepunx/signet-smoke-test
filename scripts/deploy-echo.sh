@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Deploys the five echo workloads. Requires provision.sh to have already run
-# (secrets/config synced, so there's something for them to actually fetch).
+# Deploys the echo workloads (see lib.sh's LANGUAGES for which languages are
+# currently active). Requires provision.sh to have already run (secrets/
+# config synced, so there's something for them to actually fetch).
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 require_cmd kubectl
@@ -16,4 +17,4 @@ for lang in "${LANGUAGES[@]}"; do
     -n "smoke-${lang}" --timeout=120s
 done
 
-log "all five echo Deployments are up. Run scripts/verify.sh to check their output."
+log "all ${#LANGUAGES[@]} echo Deployments are up. Run scripts/verify.sh to check their output."

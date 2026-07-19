@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Provisions signet itself for the smoke test: admin RBAC, SOPS age key,
-# the six secrets/config pairs, the GitHub deploy key + repo registration,
+# the secrets/config pairs (one per active language, see lib.sh's
+# LANGUAGES, plus the shared scope), the GitHub deploy key + repo registration,
 # an initial sync, and the shared-secret policy. Idempotent — safe to
 # re-run against an already-provisioned cluster.
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
@@ -95,7 +96,9 @@ else
 fi
 
 log "registering the repository with signet (or reusing an existing registration)"
-REPO_ID="$(signet repo list --token "$TOKEN" | grep "$REPO_SLUG" | awk '{print $1}' || true)"
+# 'repo list' prints the --name value in column 2, not the repo URL — match
+# on that (word-bounded, since "smoke-test" is a prefix of nothing else here).
+REPO_ID="$(signet repo list --token "$TOKEN" | awk '$2 == "smoke-test" {print $1}' || true)"
 if [[ -z "$REPO_ID" ]]; then
   REPO_ID="$(signet repo add \
     --name smoke-test \
@@ -105,7 +108,7 @@ if [[ -z "$REPO_ID" ]]; then
     --config-path config/ \
     --deploy-key "$DEPLOY_KEY_PATH" \
     --token "$TOKEN" \
-    | grep -i '^ID' | awk '{print $NF}')"
+    | awk '/ID:/ {print $2; exit}')"
   [[ -n "$REPO_ID" ]] || die "could not parse repo ID from 'signet repo add' output"
 fi
 echo "$REPO_ID" > "$REPO_ROOT/.smoke-repo-id"
@@ -113,5 +116,16 @@ log "repo ID: $REPO_ID"
 
 log "triggering an explicit sync"
 signet repo sync --id "$REPO_ID" --token "$TOKEN"
+
+log "granting the shared-secret policy (any echo workload, any namespace -> smoke-shared/common)"
+if ! signet policy list --token "$TOKEN" | grep -q "smoke-shared/common"; then
+  signet policy create \
+    --spiffe-id "spiffe://${TRUST_DOMAIN}/ns/*/sa/echo" \
+    --namespace smoke-shared \
+    --service common \
+    --token "$TOKEN"
+else
+  log "shared-secret policy already exists"
+fi
 
 log "provisioning complete. Run scripts/deploy-echo.sh next."

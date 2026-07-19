@@ -1,3 +1,11 @@
+# NOT currently deployed by scripts/deploy-echo.sh — "python" is deliberately
+# excluded from lib.sh's LANGUAGES list. grpc-python has no public API to
+# validate a server certificate carrying only a SPIFFE URI SAN (what
+# signet's workload listener presents), so the Python client's
+# dial_workload cannot connect to a real signet instance at all. Confirmed
+# live, not just theorized — see bytepunx/signet-clients#14. This manifest
+# is left in place, unused, so re-enabling is a one-line change to
+# LANGUAGES once that issue is resolved.
 apiVersion: v1
 kind: Namespace
 metadata:

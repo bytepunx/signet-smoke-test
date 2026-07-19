@@ -10,7 +10,14 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # Namespace/service pairs, one per language, plus the shared scope. Every
 # other script in this directory iterates this same list so it only needs
 # to be edited in one place when a language is added or removed.
-LANGUAGES=(go python typescript rust csharp)
+#
+# python is deliberately excluded: grpc-python has no public API to
+# validate a server certificate carrying only a SPIFFE URI SAN (which is
+# what signet's workload listener presents), so the Python client's
+# dial_workload cannot connect to a real signet instance at all — confirmed
+# live, not just theorized. See bytepunx/signet-clients#14 for the full
+# writeup and tracking; re-add "python" here once that's resolved.
+LANGUAGES=(go typescript rust csharp)
 
 log() { echo "[$(date +%H:%M:%S)] $*" >&2; }
 die() { echo "[$(date +%H:%M:%S)] ERROR: $*" >&2; exit 1; }

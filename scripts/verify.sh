@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Checks each echo pod's logs for the ECHO_BUNDLE: line and confirms it
 # contains the expected per-language secret/config values authored by
-# provision.sh. Matches by substring, not full JSON parsing — the five
+# provision.sh. Matches by substring, not full JSON parsing — the
 # client libraries don't all format ECHO_BUNDLE identically (e.g. numeric
 # vs. string config values, key ordering), so this stays robust to that
 # instead of requiring one canonical shape across languages.
@@ -42,4 +42,4 @@ done
 if [[ "$fail" -ne 0 ]]; then
   die "one or more languages failed verification (see FAIL lines above)"
 fi
-log "all five languages verified: per-language secret + shared secret both present."
+log "all ${#LANGUAGES[@]} languages verified: per-language secret + shared secret both present."
