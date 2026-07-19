@@ -46,6 +46,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: SIGNET_SERVICE
               value: "echo"
+            - name: SIGNET_SHARED_NAMESPACE
+              value: "smoke-shared"
+            - name: SIGNET_SHARED_SERVICE
+              value: "common"
             - name: RESTART_LOCK_TTL_SECONDS
               value: "30"
             - name: RESTART_DEBOUNCE_SECONDS

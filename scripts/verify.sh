@@ -12,7 +12,7 @@ require_cmd kubectl
 fail=0
 
 check() {
-  local lang="$1" expect="$2"
+  local lang="$1" marker="$2" expect="$3"
   local logs
   logs="$(kubectl logs -n "smoke-${lang}" deployment/echo --tail=-1 2>/dev/null || true)"
   if [[ -z "$logs" ]]; then
@@ -20,23 +20,28 @@ check() {
     fail=1
     return
   fi
-  if ! grep -q "ECHO_BUNDLE:" <<<"$logs"; then
-    echo "FAIL  smoke-${lang}: no ECHO_BUNDLE: line in logs yet"
+  if ! grep -q "${marker}:" <<<"$logs"; then
+    echo "FAIL  smoke-${lang}: no ${marker}: line in logs yet"
     fail=1
     return
   fi
-  if ! grep "ECHO_BUNDLE:" <<<"$logs" | grep -q -- "$expect"; then
-    echo "FAIL  smoke-${lang}: ECHO_BUNDLE present but missing expected value: $expect"
-    echo "        actual: $(grep 'ECHO_BUNDLE:' <<<"$logs" | tail -1)"
+  if ! grep "${marker}:" <<<"$logs" | grep -q -- "$expect"; then
+    echo "FAIL  smoke-${lang}: ${marker} present but missing expected value: $expect"
+    echo "        actual: $(grep "${marker}:" <<<"$logs" | tail -1)"
     fail=1
     return
   fi
-  echo "OK    smoke-${lang}: found expected value ($expect)"
+  echo "OK    smoke-${lang}: found expected value ($expect) in ${marker}"
 }
 
 for lang in "${LANGUAGES[@]}"; do
-  check "$lang" "hello-from-signet-${lang}"
-  check "$lang" "hello-from-signet-shared"
+  check "$lang" "ECHO_BUNDLE" "hello-from-signet-${lang}"
+  # The shared secret is fetched via a separate GetServiceBundle call,
+  # printed on its own ECHO_SHARED_BUNDLE: line (see each echo service's
+  # SIGNET_SHARED_NAMESPACE/SIGNET_SHARED_SERVICE handling) — it does NOT
+  # appear inside ECHO_BUNDLE:, since both scopes use the secret name
+  # "greeting" and merging them would silently drop one.
+  check "$lang" "ECHO_SHARED_BUNDLE" "hello-from-signet-shared"
 done
 
 if [[ "$fail" -ne 0 ]]; then
